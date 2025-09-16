@@ -1,0 +1,8 @@
+{
+  "xsappname": "dsp-scim-handler-dev",
+  "tenant-mode": "dedicated",
+  "oauth2-configuration": {
+    "grant-types": ["authorization_code", "client_credentials"],
+    "redirect-uris": ["*"]
+  }
+}
