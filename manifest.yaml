@@ -1,0 +1,18 @@
+---
+applications:
+  - name: dsp-scim-handler-srv
+    memory: 256M
+    buildpacks:
+      - nodejs_buildpack
+    command: npm run start:prod
+    random-route: true
+    env:
+      NODE_ENV: production
+      SAP_CDS_ENV: production
+      # optional: if you prefer to address services by name in code
+      HANA_SERVICE_NAME: dsp-scim-handler
+      CREDSTORE_SERVICE_NAME: my-credentials
+    services:
+      - dsp-scim-handler   # <— HDI container (plan: hdi-shared)
+      - my-credentials     # <— Credential Store (plan: standard)
+      - xsuaa-dsp-scim-handler 
