@@ -23,3 +23,8 @@ entity UserRoles : cuid, managed {
     key user : Association to Users;
     key role : Association to Roles;
 }
+
+entity AuthObjectRoles : cuid, managed {
+    key authObject : String(200);
+    key role       : Association to Roles;
+}
