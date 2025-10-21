@@ -39,4 +39,7 @@ service DSPUsers @(
     action SyncUsersVHToUsers() returns Integer;
     action SyncRolesFromSCIM() returns Integer;
     action SyncUserRolesFromSCIM() returns Integer;
+
+    @odata.draft.enabled
+    entity AuthObjectRoles as projection on db.AuthObjectRoles;
 }
