@@ -9,10 +9,10 @@
   "dependencies": {
     "@cap-js/hana": "^2",
     "@sap/cds": "^9",
-    "@sap/hana-client": "^2",
     "@sap/xsenv": "^6.0.0",
     "@sap/xssec": "^4.9.1",
     "axios": "^1.12.2",
+    "dotenv": "^17.2.3",
     "express": "^4",
     "https": "^1.0.0",
     "node-fetch": "^3.3.2",
@@ -23,18 +23,27 @@
   "devDependencies": {
     "@cap-js/cds-types": "^0.13.0",
     "@cap-js/sqlite": "^2.0.2",
-    "@sap/hdi-deploy": "^5"
+    "@sap/hdi-deploy": "^5",
+    "cds-plugin-ui5": "^0.13.0",
+    "@sap/cds-dk": "^9",
+    "rimraf": "^5.0.5",
+    "mbt": "^1.2.29"
   },
   "scripts": {
     "start": "cds-serve",
     "start:prod": "cds-serve --production",
-    "deploy:hana": "cds deploy --to hana"
+    "deploy:hana": "cds deploy --to hana",
+    "watch-userlist": "cds watch --open userlist/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "watch-user": "cds watch --open user/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "undeploy": "cf undeploy dsp-scim-handler --delete-services --delete-service-keys --delete-service-brokers",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1"
   },
   "cds": {
     "requires": {
       "db": {
         "kind": "hana",
-        "[production]": {
+        "[hybrid]": {
           "kind": "hana"
         },
         "auth": {
@@ -45,5 +54,12 @@
         }
       }
     }
-  }
+  },
+  "workspaces": [
+    "app/*"
+  ],
+  "sapux": [
+    "app/userlist",
+    "app/user"
+  ]
 }

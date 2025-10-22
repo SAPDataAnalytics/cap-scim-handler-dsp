@@ -1,0 +1,17 @@
+{
+    "SAP HANA Project Explorer.bind.confirm automatic undeployment": false,
+    "SAP HANA Project Explorer.bind.confirm existing service": false,
+    "mdk.defaultEditor": "Text Editor",
+    "workbench.editorAssociations": {
+        "*.app": "default",
+        "*.global": "default",
+        "*.action": "default",
+        "*.extension": "default",
+        "*.page": "default",
+        "*.service": "default",
+        "*.cim": "default",
+        "*.rule": "default",
+        "*.properties": "default",
+        "*.fragment": "default"
+    }
+}
