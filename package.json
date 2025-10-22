@@ -60,6 +60,7 @@
   ],
   "sapux": [
     "app/userlist",
-    "app/user"
+    "app/user",
+    "app/userlist"
   ]
 }
