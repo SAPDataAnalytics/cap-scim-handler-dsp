@@ -1,14 +1,13 @@
 using dsp.scim as db from '../db/schema';
 
 service DSPUsers @(
-    path    : '/data',
-    requires: 'authenticated-user'
+    path    : '/data'
+    // requires: 'authenticated-user'  // Temporaneamente rimosso per test locale
 ) {
     entity Users     as projection on db.Users;
     entity Roles     as projection on db.Roles;
     entity UserRoles as projection on db.UserRoles;
 
-    @readonly
     entity UsersVH {
         key id          : UUID;
             email       : String;

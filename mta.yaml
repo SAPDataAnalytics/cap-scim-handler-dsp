@@ -1,54 +1,56 @@
 _schema-version: '3.1'
 ID: dsp-scim-handler
 version: 1.0.0
-
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
 modules:
-- name: dsp-scim-handler-srv
-  type: nodejs
-  path: srv
-  parameters:
-    memory: 256M
-    buildpack: nodejs_buildpack
-    command: npm run start:prod
-    random-route: true
-  properties:
-    NODE_ENV: production
-    SAP_CDS_ENV: production
-    HANA_SERVICE_NAME: dsp-scim-handler-db
-    CREDSTORE_SERVICE_NAME: my-credentials
-  requires:
-  - name: dsp-scim-handler-db
-  - name: my-credentials
-  - name: xsuaa-dsp-scim-handler
+  - name: dsp-scim-handler-srv
+    type: nodejs
+    path: srv
+    parameters:
+      memory: 256M
+      buildpack: nodejs_buildpack
+      command: npm run start:prod
+      random-route: true
+    properties:
+      NODE_ENV: production
+      SAP_CDS_ENV: production
+      HANA_SERVICE_NAME: dsp-scim-handler-db
+      CREDSTORE_SERVICE_NAME: my-credentials
+    requires:
+      - name: dsp_scim_handler-db
+      - name: xsuaa-dsp-scim-handler
 
-- name: dsp-scim-handler-db-deployer
-  type: nodejs
-  path: gen/db
-  parameters:
-    buildpack: nodejs_buildpack
-    no-route: true
-    no-start: true
-    tasks:
-    - name: deploy-to-hana
-      command: npm start
-  requires:
-  - name: dsp-scim-handler-db
+  - name: dsp_scim_handler-srv
+    type: nodejs
+    path: gen/srv
+    requires:
+      - name: dsp_scim_handler-db
+
+  - name: dsp_scim_handler-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: dsp_scim_handler-db
 
 resources:
-- name: dsp-scim-handler-db
-  type: org.cloudfoundry.managed-service
-  parameters:
-    service: hana
-    service-plan: hdi-shared
+  - name: xsuaa-dsp-scim-handler
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+  - name: dsp_scim_handler-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
 
-- name: my-credentials
-  type: org.cloudfoundry.managed-service
-  parameters:
-    service: credential-store
-    service-plan: standard
-
-- name: xsuaa-dsp-scim-handler
-  type: org.cloudfoundry.managed-service
-  parameters:
-    service: xsuaa
-    service-plan: application

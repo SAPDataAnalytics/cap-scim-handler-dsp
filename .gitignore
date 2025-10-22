@@ -36,3 +36,6 @@ mta_archives/
 #Individual Files
 scripts/
 testing/
+
+# auto generated wildcard
+db/.env

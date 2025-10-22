@@ -1,6 +1,10 @@
 // secrets.js
 const path = require("path");
-const { readCredential } = require("./credstore");
+
+// Load .env file for local development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+}
 
 // Load VCAP locally if needed (for local dev)
 if (!process.env.VCAP_SERVICES) {
@@ -17,38 +21,29 @@ if (!process.env.VCAP_SERVICES) {
   }
 }
 
-const binding = (() => {
-  try {
-    return JSON.parse(process.env.VCAP_SERVICES).credstore[0].credentials;
-  } catch {
-    throw new Error("VCAP_SERVICES.credstore[0].credentials not found");
-  }
-})();
-
-const NAMESPACE = "dsp-scim";
 const cache = new Map();
 
 /**
- * Reads a password-type credential value (returns the string value)
+ * Reads a password-type credential value from environment variables (returns the string value)
  */
 async function getPassword(name) {
   if (cache.has(name)) return cache.get(name);
-  const res = await readCredential(binding, NAMESPACE, "password", name);
-  // res typically looks like: { name, value, username?, metadata?, ... }
-  if (!res || typeof res.value !== "string") {
-    throw new Error(`Credential "${name}" is missing or has no 'value'`);
+  const envName = name.toUpperCase().replace(/-/g, '_');
+  const value = process.env[envName];
+  if (!value) {
+    throw new Error(`Environment variable "${envName}" not found`);
   }
-  cache.set(name, res.value);
-  return res.value;
+  cache.set(name, value);
+  return value;
 }
 
 /**
- * Returns a normalized SCIM config object from the Credential Store
- * Items expected (as shown in your screenshot):
- *  - dsp-scim-token-url
- *  - dsp-scim-base-url
- *  - dsp-scim-client-id
- *  - dsp-scim-client-secret
+ * Returns a normalized SCIM config object from environment variables
+ * Items expected:
+ *  - DSP_SCIM_TOKEN_URL
+ *  - DSP_SCIM_BASE_URL
+ *  - DSP_SCIM_CLIENT_ID
+ *  - DSP_SCIM_CLIENT_SECRET
  */
 async function getSCIMConfig() {
   const [tokenUrl, baseUrl, clientId, clientSecret] = await Promise.all([
