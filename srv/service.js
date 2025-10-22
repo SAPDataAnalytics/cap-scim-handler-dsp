@@ -1,5 +1,6 @@
 const cds = require('@sap/cds')
 const { fetchUsersRaw,  fetchUsers } = require('./scim_dsp')
+const { uuid } = cds.utils
 
 module.exports = cds.service.impl(async function () {
   const { Users, Roles, UserRoles, UsersVH, RolesVH, UserRolesVH } = this.entities
@@ -112,19 +113,24 @@ module.exports = cds.service.impl(async function () {
   this.on('SyncUsersVHToUsers', async (req) => {
     const tx = cds.transaction(req)
     const scim = await fetchUsers()
+  // ...existing code...
     if (!scim?.length) return 0
 
-    const incoming = scim
-      .filter(u => !!u.email && !!u.id)
-      .map(u => ({
-        ID: u.id,
+    const incoming = scim.map(u => {
+      if (!u.email) return null;
+      let idVal = (typeof u.id === 'string' && u.id.trim()) ? u.id.trim() : null;
+      const entry = {
+        id: idVal || uuid(),
         familyName: u.lastName ?? null,
         givenName: u.firstName ?? null,
         displayName: u.displayName ?? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim(),
         email: String(u.email).trim().toLowerCase(),
         userName: u.userName ?? null
-      }))
+      };
+      return entry;
+    }).filter(Boolean);
 
+  // ...existing code...
     if (!incoming.length) return 0
     await tx.run(UPSERT.into(Users).entries(incoming))
     return incoming.length
@@ -135,8 +141,14 @@ module.exports = cds.service.impl(async function () {
     const resources = await fetchUsersRaw()
     const rolesAgg = aggregateRoles(resources) // [{ value, display, userCount }]
     if (!rolesAgg.length) return 0
-    await tx.run(UPSERT.into(Roles).entries(rolesAgg))
-    return rolesAgg.length
+    const rolesWithId = rolesAgg.map(r => ({
+      ID: r.value || uuid(),
+      roleValue: r.value,
+      roleDisplay: r.display,
+      userCount: r.userCount
+    }))
+    await tx.run(UPSERT.into(Roles).entries(rolesWithId))
+    return rolesWithId.length
   })
 
   this.on('SyncUserRolesFromSCIM', async (req) => {
@@ -145,19 +157,27 @@ module.exports = cds.service.impl(async function () {
 
     // keep Roles fresh (and userCount)
     const rolesAgg = aggregateRoles(resources)
-    if (rolesAgg.length) await tx.run(UPSERT.into(Roles).entries(rolesAgg))
+    if (rolesAgg.length) {
+      const rolesWithId = rolesAgg.map(r => ({
+        ID: r.value || uuid(),
+        roleValue: r.value,
+        roleDisplay: r.display,
+        userCount: r.userCount
+      }))
+      await tx.run(UPSERT.into(Roles).entries(rolesWithId))
+    }
 
     // build FK rows for association-only table
     const assignments = []
     for (const u of resources) {
       if (u.active === false) continue
-      const userId = u.id
+      const userId = u.id || uuid()
       if (!userId) continue
       const roles = Array.isArray(u.roles) ? u.roles : []
       for (const r of roles) {
-        const roleValue = String(r.value || '').trim()
-        if (!roleValue) continue
-        assignments.push({ user_ID: userId, role_value: roleValue })
+  const roleValue = String(r.value || '').trim()
+  if (!roleValue) continue
+  assignments.push({ userId: userId, roleValue: roleValue })
       }
     }
 
