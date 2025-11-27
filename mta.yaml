@@ -13,26 +13,20 @@ build-parameters:
 modules:
   - name: dsp-scim-handler-srv
     type: nodejs
-    path: srv
+    path: gen/srv
     parameters:
       memory: 256M
       buildpack: nodejs_buildpack
       command: npm run start:prod
       random-route: true
     properties:
-      NODE_ENV: production
-      SAP_CDS_ENV: production
-      HANA_SERVICE_NAME: dsp-scim-handler-db
-      CREDSTORE_SERVICE_NAME: my-credentials
+      DSP_SCIM_TOKEN_URL: "https://acea-devdatasphere.authentication.eu30.hana.ondemand.com/oauth/token"
+      DSP_SCIM_BASE_URL: "https://acea-devdatasphere.eu30.hcs.cloud.sap/"
+      DSP_SCIM_CLIENT_ID: "sb-36753c0b-5a8c-41b4-ab7e-299a916b9e86!b32455|client!b179"
+      DSP_SCIM_CLIENT_SECRET: "b39121e8-865d-48e1-8485-ebda477ba2e7$WOI7qacc5TpxiDtr4-SvUTWhXdxJj_EaQfNByA2Bero="
     requires:
       - name: dsp_scim_handler-db
       - name: xsuaa-dsp-scim-handler
-
-  - name: dsp_scim_handler-srv
-    type: nodejs
-    path: gen/srv
-    requires:
-      - name: dsp_scim_handler-db
 
   - name: dsp_scim_handler-db-deployer
     type: hdb
@@ -41,6 +35,8 @@ modules:
       buildpack: nodejs_buildpack
     requires:
       - name: dsp_scim_handler-db
+        properties:
+          TARGET_CONTAINER: ~{hdi-container-name}
 
 resources:
   - name: xsuaa-dsp-scim-handler
@@ -53,4 +49,6 @@ resources:
     parameters:
       service: hana
       service-plan: hdi-shared
+    properties:
+      hdi-container-name: ${service-name}
 
