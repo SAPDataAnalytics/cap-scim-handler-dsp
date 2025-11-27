@@ -117,9 +117,9 @@ module.exports = cds.service.impl(async function () {
     const incoming = scim
       .filter(u => !!u.email && !!u.id)
       .map(u => ({
-        ID: u.id,
-        familyName: u.lastName ?? null,
-        givenName: u.firstName ?? null,
+        id: u.id,
+        firstName: u.firstName ?? null,
+        lastName: u.lastName ?? null,
         displayName: u.displayName ?? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim(),
         email: String(u.email).trim().toLowerCase(),
         userName: u.userName ?? null
@@ -133,7 +133,7 @@ module.exports = cds.service.impl(async function () {
   this.on('SyncRolesFromSCIM', async (req) => {
     const tx = cds.transaction(req)
     const resources = await fetchUsersRaw()
-    const rolesAgg = aggregateRoles(resources) // [{ value, display, userCount }]
+    const rolesAgg = aggregateRoles(resources)
     if (!rolesAgg.length) return 0
     await tx.run(UPSERT.into(Roles).entries(rolesAgg))
     return rolesAgg.length
@@ -143,7 +143,7 @@ module.exports = cds.service.impl(async function () {
     const tx = cds.transaction(req)
     const resources = await fetchUsersRaw()
 
-    // keep Roles fresh (and userCount)
+    // keep Roles fresh
     const rolesAgg = aggregateRoles(resources)
     if (rolesAgg.length) await tx.run(UPSERT.into(Roles).entries(rolesAgg))
 
@@ -157,7 +157,7 @@ module.exports = cds.service.impl(async function () {
       for (const r of roles) {
         const roleValue = String(r.value || '').trim()
         if (!roleValue) continue
-        assignments.push({ user_ID: userId, role_value: roleValue })
+        assignments.push({ userId: userId, roleValue: roleValue })
       }
     }
 
@@ -175,12 +175,11 @@ module.exports = cds.service.impl(async function () {
         const value = String(r.value || '').trim()
         if (!value) continue
         const display = String(r.display || value).trim()
-        const e = map.get(value) || { value, display, userCount: 0 }
-        e.userCount += 1
+        const e = map.get(value) || { roleValue: value, roleDisplay: display }
         map.set(value, e)
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.display.localeCompare(b.display))
+    return Array.from(map.values()).sort((a, b) => a.roleDisplay.localeCompare(b.roleDisplay))
   }
 })
 
