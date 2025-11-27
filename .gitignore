@@ -39,3 +39,6 @@ testing/
 
 # auto generated wildcard
 db/.env
+
+#venv
+.venv/
