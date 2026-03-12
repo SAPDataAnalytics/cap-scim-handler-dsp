@@ -115,7 +115,10 @@ async function fetchUsersRaw() {
     });
 
     // Return the SCIM "Resources" array unchanged
-    return response.data?.Resources || [];
+    const resources = response.data?.Resources || [];
+    console.log(`\n📥 fetchUsersRaw: Retrieved ${resources.length} users from SCIM API`);
+    console.log(`🔍 User details: ${resources.map(u => `${u.userName || u.id} (${u.roles?.length || 0} roles)`).join(', ')}`);
+    return resources;
   } catch (err) {
     console.error("❌ Failed to fetch raw users:", err.response?.data || err.message);
     throw err;

@@ -47,6 +47,9 @@ resources:
   - name: dsp_scim_handler-db
     type: com.sap.xs.hdi-container
     parameters:
+      service-name: SCIM_UTILITIES
+      config:
+        schema: SCIM_UTILITIES
       service: hana
       service-plan: hdi-shared
     properties:

@@ -39,6 +39,17 @@ service DSPUsers @(
     action SyncRolesFromSCIM() returns Integer;
     action SyncUserRolesFromSCIM() returns Integer;
 
+    // Action to search for a specific role in SCIM
+    action SearchRole(roleValue: String) returns {
+        ![exists]: Boolean;
+        found_in_users: array of {
+            userName: String;
+            displayName: String;
+            email: String;
+        };
+        message: String;
+    };
+
     @odata.draft.enabled
     entity AuthObjectRoles as projection on db.AuthObjectRoles;
 }
