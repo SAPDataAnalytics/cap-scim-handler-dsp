@@ -40,18 +40,24 @@ module.exports = cds.service.impl(async function () {
     try {
       console.log('📥 Building RolesVH from SCIM…')
       const resources = await fetchUsersRaw()
+      console.log(`📊 Total users fetched from SCIM: ${resources.length}`)
 
       // Only count active users (change if you want to include inactive)
       const rolesMap = new Map()
 
       for (const u of resources) {
-        if (u.active === false) continue
+        if (u.active === false) {
+          console.log(`⏭️  Skipping inactive user: ${u.userName || u.id}`)
+          continue
+        }
         const roles = Array.isArray(u.roles) ? u.roles : []
+        console.log(`👤 User: ${u.userName || u.id}, Roles count: ${roles.length}`)
         for (const r of roles) {
           // Normalize fields
           const roleValue = String(r.value || '').trim()
           const roleDisplay = String(r.display || roleValue).trim()
           if (!roleValue) continue
+          console.log(`   ✓ Role: ${roleValue} (${roleDisplay})`)
 
           const entry = rolesMap.get(roleValue) || { roleValue, roleDisplay, usersCount: 0 }
           entry.usersCount += 1
@@ -59,9 +65,12 @@ module.exports = cds.service.impl(async function () {
         }
       }
 
-      return Array.from(rolesMap.values()).sort((a, b) =>
+      const finalRoles = Array.from(rolesMap.values()).sort((a, b) =>
         a.roleDisplay.localeCompare(b.roleDisplay)
       )
+      console.log(`✅ Total unique roles: ${finalRoles.length}`)
+      console.log(`📋 Role list: ${finalRoles.map(r => r.roleValue).join(', ')}`)
+      return finalRoles
     } catch (error) {
       console.error('❌ Failed to build RolesVH', error)
       req.reject(500, 'Could not build RolesVH from SCIM API')
@@ -105,6 +114,45 @@ module.exports = cds.service.impl(async function () {
     } catch (error) {
       console.error('❌ Failed to build UserRolesVH', error)
       req.reject(500, 'Could not build UserRolesVH from SCIM API')
+    }
+  })
+
+  // --- Search for a specific role action
+  this.on('SearchRole', async (req) => {
+    const { roleValue } = req.data
+    console.log(`\n🔍 Searching for role: ${roleValue}`)
+    
+    try {
+      const resources = await fetchUsersRaw()
+      const found_users = []
+      let exists = false
+
+      for (const u of resources) {
+        if (u.active === false) continue
+        const roles = Array.isArray(u.roles) ? u.roles : []
+        for (const r of roles) {
+          const rValue = String(r.value || '').trim()
+          if (rValue === roleValue) {
+            exists = true
+            found_users.push({
+              userName: u.userName || '',
+              displayName: u.displayName || '',
+              email: u.emails?.[0]?.value || ''
+            })
+            console.log(`✅ Found role "${roleValue}" in user: ${u.userName || u.id}`)
+          }
+        }
+      }
+
+      const message = exists 
+        ? `✅ Role "${roleValue}" found in ${found_users.length} user(s)`
+        : `❌ Role "${roleValue}" not found in any active user in SCIM`
+
+      console.log(message)
+      return { "exists": exists, found_in_users: found_users, message }
+    } catch (error) {
+      console.error('❌ Failed to search role:', error)
+      req.reject(500, `Could not search role: ${error.message}`)
     }
   })
 
@@ -167,19 +215,31 @@ module.exports = cds.service.impl(async function () {
   })
 
   function aggregateRoles(resources) {
+    console.log('\n🔍 aggregateRoles: Processing', resources.length, 'users')
     const map = new Map()
+    let totalRolesFound = 0
     for (const u of resources) {
-      if (u.active === false) continue
+      if (u.active === false) {
+        console.log(`⏭️  Skipping inactive user: ${u.userName || u.id}`)
+        continue
+      }
       const roles = Array.isArray(u.roles) ? u.roles : []
+      if (roles.length > 0) {
+        console.log(`👤 User: ${u.userName || u.id}, Roles: ${roles.map(r => r.value).join(', ')}`)
+      }
       for (const r of roles) {
         const value = String(r.value || '').trim()
         if (!value) continue
+        totalRolesFound++
         const display = String(r.display || value).trim()
         const e = map.get(value) || { roleValue: value, roleDisplay: display }
         map.set(value, e)
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.roleDisplay.localeCompare(b.roleDisplay))
+    const result = Array.from(map.values()).sort((a, b) => a.roleDisplay.localeCompare(b.roleDisplay))
+    console.log(`✅ Aggregated ${result.length} unique roles from ${totalRolesFound} total role assignments`)
+    console.log(`📋 Roles: ${result.map(r => r.roleValue).join(', ')}`)
+    return result
   }
 })
 
