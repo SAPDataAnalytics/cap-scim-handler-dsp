@@ -20,10 +20,10 @@ modules:
       command: npm run start:prod
       random-route: true
     properties:
-      DSP_SCIM_TOKEN_URL: "https://acea-devdatasphere.authentication.eu30.hana.ondemand.com/oauth/token"
-      DSP_SCIM_BASE_URL: "https://acea-devdatasphere.eu30.hcs.cloud.sap/"
-      DSP_SCIM_CLIENT_ID: "sb-36753c0b-5a8c-41b4-ab7e-299a916b9e86!b32455|client!b179"
-      DSP_SCIM_CLIENT_SECRET: "b39121e8-865d-48e1-8485-ebda477ba2e7$WOI7qacc5TpxiDtr4-SvUTWhXdxJj_EaQfNByA2Bero="
+      DSP_SCIM_TOKEN_URL: "https://acea-datasphere.authentication.eu30.hana.ondemand.com/oauth/token"
+      DSP_SCIM_BASE_URL: "https://acea-datasphere.eu30.hcs.cloud.sap/"
+      DSP_SCIM_CLIENT_ID: "sb-da5cd35b-f5de-4866-855b-20a3070e81d2!b40601|client!b179"
+      DSP_SCIM_CLIENT_SECRET: "976f8698-c886-4576-b6e8-72a1ef46fb33$3Gk6kWcY9W7jhipIxBJgYv3dqpgnKhTG5_Jh5Wl4GWk="
     requires:
       - name: dsp_scim_handler-db
       - name: xsuaa-dsp-scim-handler
