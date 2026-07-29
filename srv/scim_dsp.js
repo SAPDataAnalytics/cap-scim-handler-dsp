@@ -58,26 +58,9 @@ async function getCSRFToken(bearerToken) {
 }
 
 async function fetchUsers() {
-  const { apiBaseUrl } = await getSCIMConfig();
-
+  // fetchUsersRaw already handles pagination; map the fields on top of it
   try {
-    const token = await getAccessToken();
-    const { csrfToken, cookies } = await getCSRFToken(token);
-
-    const cookieHeader = cookies?.join("; ");
-    console.log("➡️ Fetching users with CSRF + Cookie");
-
-    const response = await axios.get(`${apiBaseUrl}/api/v1/scim2/Users/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "x-sap-sac-custom-auth": "true",
-        "x-csrf-token": csrfToken,
-        Cookie: cookieHeader
-      }
-    });
-
-    console.log("✅ Users fetched successfully");
-    const resources = response.data?.Resources || [];
+    const resources = await fetchUsersRaw();
     return resources.map(user => {
       const givenName = user.name?.givenName || "";
       const familyName = user.name?.familyName || "";
@@ -98,27 +81,46 @@ async function fetchUsers() {
 
 async function fetchUsersRaw() {
   const { apiBaseUrl } = await getSCIMConfig();
+  const PAGE_SIZE = 100;
 
   try {
     const token = await getAccessToken();
     const { csrfToken, cookies } = await getCSRFToken(token);
 
     const cookieHeader = cookies?.join("; ");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "x-sap-sac-custom-auth": "true",
+      "x-csrf-token": csrfToken,
+      Cookie: cookieHeader
+    };
 
-    const response = await axios.get(`${apiBaseUrl}/api/v1/scim2/Users/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "x-sap-sac-custom-auth": "true",
-        "x-csrf-token": csrfToken,
-        Cookie: cookieHeader
-      }
+    // First page — also tells us totalResults
+    const firstResponse = await axios.get(`${apiBaseUrl}/api/v1/scim2/Users/`, {
+      headers,
+      params: { startIndex: 1, count: PAGE_SIZE }
     });
 
-    // Return the SCIM "Resources" array unchanged
-    const resources = response.data?.Resources || [];
-    console.log(`\n📥 fetchUsersRaw: Retrieved ${resources.length} users from SCIM API`);
-    console.log(`🔍 User details: ${resources.map(u => `${u.userName || u.id} (${u.roles?.length || 0} roles)`).join(', ')}`);
-    return resources;
+    const totalResults = firstResponse.data?.totalResults ?? 0;
+    let allResources = firstResponse.data?.Resources || [];
+    console.log(`\n📥 fetchUsersRaw: page 1 — ${allResources.length}/${totalResults} users`);
+
+    // Fetch remaining pages if needed
+    let startIndex = 1 + PAGE_SIZE;
+    while (startIndex <= totalResults) {
+      const pageResponse = await axios.get(`${apiBaseUrl}/api/v1/scim2/Users/`, {
+        headers,
+        params: { startIndex, count: PAGE_SIZE }
+      });
+      const pageResources = pageResponse.data?.Resources || [];
+      allResources = allResources.concat(pageResources);
+      console.log(`📥 fetchUsersRaw: page ${Math.ceil(startIndex / PAGE_SIZE) + 1} — ${allResources.length}/${totalResults} users`);
+      startIndex += PAGE_SIZE;
+    }
+
+    console.log(`✅ fetchUsersRaw: Retrieved ${allResources.length} users total (totalResults: ${totalResults})`);
+    console.log(`🔍 User details: ${allResources.map(u => `${u.userName || u.id} (${u.roles?.length || 0} roles)`).join(', ')}`);
+    return allResources;
   } catch (err) {
     console.error("❌ Failed to fetch raw users:", err.response?.data || err.message);
     throw err;
