@@ -20,8 +20,8 @@ modules:
       command: npm run start:prod
       random-route: true
     properties:
-      DSP_SCIM_TOKEN_URL: "https://acea-devdatasphere.authentication.eu30.hana.ondemand.com/oauth/token"
-      DSP_SCIM_BASE_URL: "https://acea-devdatasphere.eu30.hcs.cloud.sap/"
+      DSP_SCIM_TOKEN_URL: "https://acea-datasphere.authentication.eu30.hana.ondemand.com/oauth/token"
+      DSP_SCIM_BASE_URL: "https://acea-datasphere.eu30.hcs.cloud.sap/"
       DSP_SCIM_CLIENT_ID: "REMOVED_COMPROMISED_CREDENTIAL"
       DSP_SCIM_CLIENT_SECRET: "REMOVED_COMPROMISED_CREDENTIAL"
     requires:
