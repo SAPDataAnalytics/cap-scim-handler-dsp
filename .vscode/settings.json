@@ -13,5 +13,8 @@
         "*.rule": "default",
         "*.properties": "default",
         "*.fragment": "default"
-    }
+    },
+    "SAP HANA Database Explorer.ShowXsAdvancedConnections": true,
+    "SAP HANA SQLScript LSP.URL": "https://cf-eu30.cf.hana-tooling.ingress.orchestration.prod-eu30.hanacloud.ondemand.com/hrtt-service",
+    "SAP HANA SQLScript LSP.XsAdvancedHrttServiceUrl": ""
 }
